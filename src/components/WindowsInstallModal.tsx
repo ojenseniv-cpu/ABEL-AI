@@ -450,20 +450,20 @@ pause
               {/* Download Buttons */}
               <div className="flex flex-col gap-2 w-full sm:w-auto shrink-0">
                 <a
-                  href="/abel_icon.svg"
-                  download="AbelAI-Desktop-Icon.svg"
+                  href="/abel_icon.ico"
+                  download="abel_icon.ico"
                   className="px-4 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer text-center"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Download SVG Icon</span>
+                  <span>Download Binary .ICO Icon</span>
                 </a>
                 <a
                   href="/abel_icon.svg"
-                  download="abel_icon.ico"
+                  download="AbelAI-Desktop-Icon.svg"
                   className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/40 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer text-center"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Download .ICO File</span>
+                  <span>Download SVG Icon</span>
                 </a>
               </div>
             </div>

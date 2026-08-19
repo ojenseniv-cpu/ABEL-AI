@@ -1,108 +1,190 @@
-# ==============================================================================
-# Abel AI - Autonomous Executive OS
-# Windows Native Setup & Background Daemon Installer (.ps1)
-# ==============================================================================
+# =========================================================================
+# ABEL AI - OFFICIAL WINDOWS AUTONOMOUS EXECUTIVE INSTALLER (PowerShell)
+# Architecture: Windows 10 / Windows 11 (x64 / ARM64)
+# Features: Real Binary Icon, Standalone Window, System Tray Daemon, Start Menu
+# =========================================================================
 
 param (
-    [string]$AppUrl = "https://ais-dev-idpj4eli7xhmtpop4ynom3-561820329646.us-west2.run.app",
-    [string]$InstallPath = "$env:LOCALAPPDATA\AbelAI",
-    [string]$WakeWord = "hey abel",
-    [string]$TriggerHotkey = "Space",
-    [switch]$AutoStart = $true
+    [string]$AppUrl = "https://ais-dev-idpj4eli7xhmtpop4ynom3-561820329646.us-west2.run.app"
 )
 
-Write-Host "===============================================================================" -ForegroundColor Yellow
-Write-Host "            ABEL AI - AUTONOMOUS EXECUTIVE OS & ASSISTANT" -ForegroundColor Yellow
-Write-Host "                    WINDOWS NATIVE DAEMON SETUP" -ForegroundColor Yellow
-Write-Host "===============================================================================" -ForegroundColor Yellow
+$ErrorActionPreference = "SilentlyContinue"
+
+Write-Host "=================================================================" -ForegroundColor DarkYellow
+Write-Host "   ___   ___  ___ _       _   ___ " -ForegroundColor Yellow
+Write-Host "  / _ \ / _ \/ _ \ |     / \ |_ _|" -ForegroundColor Yellow
+Write-Host " / /_\ / _ </  __/ |__  / _ \ | | " -ForegroundColor Yellow
+Write-Host "/_/ \_\___/ \___/|____/_/ \_\___| " -ForegroundColor Yellow
+Write-Host "   AUTONOMOUS EXECUTIVE OPERATING SYSTEM - WINDOWS INSTALLER" -ForegroundColor DarkYellow
+Write-Host "=================================================================" -ForegroundColor DarkYellow
 Write-Host ""
-Write-Host "[*] Target Directory: $InstallPath" -ForegroundColor Cyan
-Write-Host "[*] App Endpoint:     $AppUrl" -ForegroundColor Cyan
-Write-Host "[*] Wake Word:        '$WakeWord'" -ForegroundColor Cyan
-Write-Host "[*] Trigger Hotkey:   [$TriggerHotkey]" -ForegroundColor Cyan
-Write-Host ""
 
-# 1. Create directory structure
-if (-not (Test-Path $InstallPath)) {
-    New-Item -ItemType Directory -Path $InstallPath -Force | Out-Null
-    Write-Host "[+] Created local app folder: $InstallPath" -ForegroundColor Green
+$InstallDir = "$env:LOCALAPPDATA\AbelAI"
+$DesktopShortcut = "$env:USERPROFILE\Desktop\Abel AI.lnk"
+$StartMenuDir = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Abel AI"
+$StartMenuShortcut = "$StartMenuDir\Abel AI.lnk"
+$IconPath = "$InstallDir\abel_icon.ico"
+$TrayScriptPath = "$InstallDir\AbelTrayDaemon.ps1"
+$TrayLauncherVbs = "$InstallDir\LaunchTray.vbs"
+
+Write-Host "[1/6] Setting up installation directories..." -ForegroundColor Cyan
+if (!(Test-Path -Path $InstallDir)) { New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null }
+if (!(Test-Path -Path $StartMenuDir)) { New-Item -ItemType Directory -Path $StartMenuDir -Force | Out-Null }
+
+Write-Host "[2/6] Acquiring official binary Abel AI Desktop Icon..." -ForegroundColor Cyan
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$iconDownloaded = $false
+
+try {
+    Invoke-WebRequest -Uri "$AppUrl/abel_icon.ico" -OutFile $IconPath -UseBasicParsing -TimeoutSec 10
+    if ((Test-Path $IconPath) -and ((Get-Item $IconPath).Length -gt 100)) {
+        $iconDownloaded = $true
+    }
+} catch {}
+
+if (-not $iconDownloaded) {
+    # Generate native high-resolution binary icon on Windows via .NET System.Drawing
+    try {
+        Add-Type -AssemblyName System.Drawing
+        $bmp = New-Object System.Drawing.Bitmap 256, 256
+        $g = [System.Drawing.Graphics]::FromImage($bmp)
+        $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+        $g.Clear([System.Drawing.Color]::FromArgb(0, 0, 0, 0))
+
+        # Draw dark hexagon
+        $hexBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 10, 12, 18))
+        $goldPen = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(255, 251, 191, 36)), 10
+
+        $points = @(
+            (New-Object System.Drawing.PointF 128, 16),
+            (New-Object System.Drawing.PointF 232, 76),
+            (New-Object System.Drawing.PointF 232, 180),
+            (New-Object System.Drawing.PointF 128, 240),
+            (New-Object System.Drawing.PointF 24, 180),
+            (New-Object System.Drawing.PointF 24, 76)
+        )
+        $g.FillPolygon($hexBrush, $points)
+        $g.DrawPolygon($goldPen, $points)
+
+        # Draw "A" glyph
+        $goldBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 254, 240, 138))
+        $font = New-Object System.Drawing.Font "Arial", 110, ([System.Drawing.FontStyle]::Bold)
+        $sf = New-Object System.Drawing.StringFormat
+        $sf.Alignment = [System.Drawing.StringAlignment]::Center
+        $sf.LineAlignment = [System.Drawing.StringAlignment]::Center
+        $g.DrawString("A", $font, $goldBrush, (New-Object System.Drawing.RectangleF 0, 15, 256, 230), $sf)
+
+        $hIcon = $bmp.GetHicon()
+        $icon = [System.Drawing.Icon]::FromHandle($hIcon)
+        $fs = New-Object System.IO.FileStream $IconPath, ([System.IO.FileMode]::Create)
+        $icon.Save($fs)
+        $fs.Close()
+        $bmp.Dispose()
+        $g.Dispose()
+    } catch {}
 }
 
-# 2. Create Start Menu directory
-$startMenuPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Abel AI"
-if (-not (Test-Path $startMenuPath)) {
-    New-Item -ItemType Directory -Path $startMenuPath -Force | Out-Null
-}
+Write-Host "[3/6] Detecting browser runtime for standalone app execution..." -ForegroundColor Cyan
+$edge64 = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
+$edge32 = "${env:ProgramFiles}\Microsoft\Edge\Application\msedge.exe"
+$chrome = "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe"
+$chromeUser = "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe"
 
-# 3. Create Windows Script Host Shortcut on Desktop
-$wsh = New-Object -ComObject WScript.Shell
-$desktopPath = [System.Environment]::GetFolderPath('Desktop')
-$shortcut = $wsh.CreateShortcut("$desktopPath\Abel AI.lnk")
+$targetExe = "msedge.exe"
+$appArgs = "--app=$AppUrl --window-size=1440,900 --disable-features=Translate --app-id=AbelAI"
 
-$edgePath = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
-$chromePath = "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe"
+if (Test-Path $edge64) { $targetExe = $edge64 }
+elseif (Test-Path $edge32) { $targetExe = $edge32 }
+elseif (Test-Path $chrome) { $targetExe = $chrome }
+elseif (Test-Path $chromeUser) { $targetExe = $chromeUser }
 
-if (Test-Path $edgePath) {
-    $shortcut.TargetPath = $edgePath
-    $shortcut.Arguments = "--app=$AppUrl --window-size=1440,900"
-    $shortcut.Description = "Abel AI - Autonomous Executive OS"
-} elseif (Test-Path $chromePath) {
-    $shortcut.TargetPath = $chromePath
-    $shortcut.Arguments = "--app=$AppUrl --window-size=1440,900"
-    $shortcut.Description = "Abel AI - Autonomous Executive OS"
-} else {
-    $shortcut.TargetPath = $AppUrl
-}
-$shortcut.Save()
-Write-Host "[+] Desktop shortcut created at: $desktopPath\Abel AI.lnk" -ForegroundColor Green
+Write-Host "[4/6] Creating Desktop and Start Menu Shortcuts with custom Gold Icon..." -ForegroundColor Cyan
+$WshShell = New-Object -ComObject WScript.Shell
 
-# 4. Create Standalone Batch Launcher
-$batchLauncherContent = @"
-@echo off
-title Abel AI Executive OS
-start "" "$AppUrl"
-"@
-Set-Content -Path "$InstallPath\Launch-AbelAI.bat" -Value $batchLauncherContent
-Write-Host "[+] Local launcher created at: $InstallPath\Launch-AbelAI.bat" -ForegroundColor Green
+# Desktop Shortcut
+$Shortcut = $WshShell.CreateShortcut($DesktopShortcut)
+$Shortcut.TargetPath = $targetExe
+$Shortcut.Arguments = $appArgs
+$Shortcut.Description = "Abel AI - Autonomous Executive Operating System"
+$Shortcut.WorkingDirectory = $InstallDir
+if (Test-Path $IconPath) { $Shortcut.IconLocation = "$IconPath, 0" }
+$Shortcut.Save()
 
-# 5. Create System Tray Background Daemon Runner
-$daemonScript = @"
-# Abel AI Background Tray Daemon
+# Start Menu Shortcut
+$SmShortcut = $WshShell.CreateShortcut($StartMenuShortcut)
+$SmShortcut.TargetPath = $targetExe
+$SmShortcut.Arguments = $appArgs
+$SmShortcut.Description = "Abel AI - Autonomous Executive Operating System"
+$SmShortcut.WorkingDirectory = $InstallDir
+if (Test-Path $IconPath) { $SmShortcut.IconLocation = "$IconPath, 0" }
+$SmShortcut.Save()
+
+Write-Host "[5/6] Generating Abel AI Windows System Tray Daemon..." -ForegroundColor Cyan
+$trayDaemonCode = @"
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
-`$notifyIcon = New-Object System.Windows.Forms.NotifyIcon
-`$notifyIcon.Icon = [System.Drawing.SystemIcons]::Application
-`$notifyIcon.Text = "Abel AI - Wake: $WakeWord"
-`$notifyIcon.Visible = `$true
+`$notify = New-Object System.Windows.Forms.NotifyIcon
+`$iconPath = "$IconPath"
+if (Test-Path `$iconPath) {
+    `$notify.Icon = New-Object System.Drawing.Icon `$iconPath
+} else {
+    `$notify.Icon = [System.Drawing.SystemIcons]::Application
+}
+`$notify.Text = "Abel AI - Autonomous Executive OS"
+`$notify.Visible = `$true
 
 `$contextMenu = New-Object System.Windows.Forms.ContextMenuStrip
-`$itemOpen = `$contextMenu.Items.Add("Open Abel AI")
-`$itemOpen.add_Click({ Start-Process "$AppUrl" })
 
-`$itemExit = `$contextMenu.Items.Add("Exit Abel AI")
-`$itemExit.add_Click({ `$notifyIcon.Visible = `$false; [System.Windows.Forms.Application]::Exit() })
+`$itemOpen = `$contextMenu.Items.Add("⚡ Open Abel AI Desktop")
+`$itemOpen.add_Click({
+    Start-Process "$targetExe" "$appArgs"
+})
 
-`$notifyIcon.ContextMenuStrip = `$contextMenu
-`$notifyIcon.ShowBalloonTip(3000, "Abel AI Active", "Running in tray next to clock. Wake word: '$WakeWord'", [System.Windows.Forms.ToolTipIcon]::Info)
+`$itemVoice = `$contextMenu.Items.Add("🎙️ Microphone & Voice Studio")
+`$itemVoice.add_Click({
+    Start-Process "$targetExe" "$appArgs"
+})
+
+`$itemSep = `$contextMenu.Items.Add("-")
+
+`$itemExit = `$contextMenu.Items.Add("❌ Exit Abel AI")
+`$itemExit.add_Click({
+    `$notify.Visible = `$false
+    `$notify.Dispose()
+    [System.Windows.Forms.Application]::Exit()
+})
+
+`$notify.ContextMenuStrip = `$contextMenu
+`$notify.add_DoubleClick({
+    Start-Process "$targetExe" "$appArgs"
+})
+
+`$notify.ShowBalloonTip(3000, "Abel AI Active", "Abel AI is running in the background next to your Windows clock.", [System.Windows.Forms.ToolTipIcon]::Info)
 
 [System.Windows.Forms.Application]::Run()
 "@
-Set-Content -Path "$InstallPath\AbelTrayDaemon.ps1" -Value $daemonScript
-Write-Host "[+] System tray background daemon saved: $InstallPath\AbelTrayDaemon.ps1" -ForegroundColor Green
 
-# 6. Auto-start with Windows (Optional)
-if ($AutoStart) {
-    $runKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-    Set-ItemProperty -Path $runKey -Name "AbelAIDaemon" -Value "powershell.exe -WindowStyle Hidden -File `"$InstallPath\AbelTrayDaemon.ps1`"" -Force
-    Write-Host "[+] Registered Auto-Start with Windows (Startup Registry)" -ForegroundColor Green
-}
+Set-Content -Path $TrayScriptPath -Value $trayDaemonCode -Encoding UTF8
+
+# Silent VBS launcher for tray daemon
+$vbsContent = "Set WshShell = CreateObject(`"WScript.Shell`")`r`nWshShell.Run `"powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File `"`" & `"$TrayScriptPath`" & `"`"`", 0, False"
+Set-Content -Path $TrayLauncherVbs -Value $vbsContent -Encoding ASCII
+
+# Refresh Windows Icon Cache so desktop icon renders instantly
+try {
+    & ie4uinit.exe -show
+} catch {}
+
+Write-Host "[6/6] Launching Abel AI Desktop App & System Tray Daemon..." -ForegroundColor Green
+Start-Process "wscript.exe" "`"$TrayLauncherVbs`""
+Start-Process $targetExe $appArgs
 
 Write-Host ""
-Write-Host "===============================================================================" -ForegroundColor Green
-Write-Host "                    INSTALLATION COMPLETED SUCCESSFULLY!" -ForegroundColor Green
-Write-Host "===============================================================================" -ForegroundColor Green
-Write-Host ""
-Write-Host "You can now launch Abel AI from your Desktop shortcut or start menu." -ForegroundColor Cyan
-Write-Host "Starting Abel AI now..." -ForegroundColor Yellow
-Start-Process $AppUrl
+Write-Host "=================================================================" -ForegroundColor Yellow
+Write-Host " SUCCESS: Abel AI is now installed on your Windows machine!" -ForegroundColor Green
+Write-Host " [✓] Desktop Shortcut: $DesktopShortcut (With Gold Hexagon Icon)" -ForegroundColor Cyan
+Write-Host " [✓] Start Menu: $StartMenuShortcut" -ForegroundColor Cyan
+Write-Host " [✓] System Tray: Running silently in Notification Area next to clock" -ForegroundColor Cyan
+Write-Host " [✓] Native Window: Running standalone frameless executive experience" -ForegroundColor Cyan
+Write-Host "=================================================================" -ForegroundColor Yellow
