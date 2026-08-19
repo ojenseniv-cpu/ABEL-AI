@@ -1,0 +1,11 @@
+{
+  "name": "Abel AI",
+  "description": "Abel AI is a black-and-gold futuristic autonomous executive operating system with circular voice pulse, customizable keyboard trigger, 3 persona voices (Witty Female, The Joker, Arnold T-1800), brainstorming studio, video game & software builder with approval pipeline, and multi-user Windows install support.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
+

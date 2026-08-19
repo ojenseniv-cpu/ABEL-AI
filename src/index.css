@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --gold-primary: #fbbf24;
+    --gold-secondary: #f59e0b;
+    --gold-glow: rgba(251, 191, 36, 0.4);
+    --gold-border: rgba(251, 191, 36, 0.35);
+    --bg-primary: #020617;
+    --bg-surface: #0f172a;
+    --pulse-speed: 2s;
+  }
+}
+
+/* Dynamic Font Options */
+.font-tech-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.font-cyber-sans {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.font-executive-modern {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.font-display-orbit {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+
+/* Dynamic Pulse Animations */
+@keyframes abel-breathing-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: drop-shadow(0 0 10px var(--gold-glow));
+  }
+  50% {
+    opacity: 0.72;
+    transform: scale(0.985);
+    filter: drop-shadow(0 0 3px var(--gold-glow));
+  }
+}
+
+.theme-pulse {
+  animation: abel-breathing-pulse var(--pulse-speed, 2s) cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Hologram Grid & Scanline Ambience */
+.hologram-grid-bg {
+  background-image: 
+    linear-gradient(to right, rgba(251, 191, 36, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(251, 191, 36, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.scanline-overlay {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+}
