@@ -16,6 +16,7 @@ import {
   ChevronRight,
   AlertCircle,
   Mic,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 interface WindowsInstallModalProps {
@@ -33,7 +34,7 @@ export const WindowsInstallModal: React.FC<WindowsInstallModalProps> = ({
   triggerHotkey = 'Space',
   onOpenAudioCalibration,
 }) => {
-  const [activeTab, setActiveTab] = useState<'pwa' | 'ps1' | 'bat' | 'terminal'>('pwa');
+  const [activeTab, setActiveTab] = useState<'pwa' | 'ps1' | 'bat' | 'terminal' | 'icon'>('pwa');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [installStatus, setInstallStatus] = useState<string | null>(null);
@@ -256,6 +257,16 @@ pause
           >
             <Zap className="w-3.5 h-3.5" /> Web One-Liner
           </button>
+          <button
+            onClick={() => setActiveTab('icon')}
+            className={`py-2 px-3 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              activeTab === 'icon'
+                ? 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(251,191,36,0.4)]'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <ImageIcon className="w-3.5 h-3.5" /> Desktop Icon (.ico)
+          </button>
         </div>
 
         {/* Status Toast */}
@@ -387,6 +398,80 @@ pause
                   {copiedCommand ? 'Copied!' : 'Copy'}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 5: Desktop Icon Preview & Direct Download */}
+        {activeTab === 'icon' && (
+          <div className="space-y-4 text-xs">
+            <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 space-y-2">
+              <h4 className="text-amber-400 font-bold uppercase text-[11px] flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5" /> Official Abel AI Desktop Icon Asset
+              </h4>
+              <p className="text-slate-300 font-sans leading-relaxed">
+                The high-resolution Gold &amp; Obsidian Hexagonal Medallion icon is bundled directly in the Windows installer and applied to your desktop shortcut automatically. You can also download the standalone icon files below:
+              </p>
+            </div>
+
+            {/* Desktop Mockup Preview */}
+            <div className="p-4 bg-slate-950 rounded-2xl border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="relative group">
+                  <div className="w-20 h-20 rounded-2xl bg-black border-2 border-amber-400/60 p-2 shadow-[0_0_25px_rgba(251,191,36,0.3)] flex items-center justify-center">
+                    <img
+                      src="/abel_icon.svg"
+                      alt="Abel AI Desktop Icon"
+                      className="w-full h-full object-contain"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-amber-400 rounded-full flex items-center justify-center text-[9px] font-black text-slate-950 border border-slate-950">
+                    ★
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>Abel AI</span>
+                    <span className="text-[10px] px-1.5 py-0.5 bg-amber-400/20 text-amber-300 border border-amber-400/40 rounded">
+                      .lnk
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 font-sans">
+                    Vector Hexagon • Cybernetic Gold Core • Windows 10/11 Compatible
+                  </div>
+                  <div className="text-[10px] font-mono text-amber-400">
+                    Location: %LOCALAPPDATA%\AbelAI\abel_icon.ico
+                  </div>
+                </div>
+              </div>
+
+              {/* Download Buttons */}
+              <div className="flex flex-col gap-2 w-full sm:w-auto shrink-0">
+                <a
+                  href="/abel_icon.svg"
+                  download="AbelAI-Desktop-Icon.svg"
+                  className="px-4 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer text-center"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download SVG Icon</span>
+                </a>
+                <a
+                  href="/abel_icon.svg"
+                  download="abel_icon.ico"
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/40 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download .ICO File</span>
+                </a>
+              </div>
+            </div>
+
+            {/* How to set manual icon on Windows */}
+            <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 space-y-1 text-[11px] font-sans text-slate-400">
+              <span className="text-slate-300 font-bold uppercase text-[10px] block">To customize any existing Windows shortcut:</span>
+              <p>Right-click shortcut → <strong>Properties</strong> → <strong>Change Icon...</strong> → Browse to <code>%LOCALAPPDATA%\AbelAI\abel_icon.ico</code> or downloaded icon.</p>
             </div>
           </div>
         )}

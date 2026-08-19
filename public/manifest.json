@@ -10,7 +10,7 @@
   "categories": ["productivity", "utilities", "business"],
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23FBBF24'%3E%3Crect width='512' height='512' rx='128' fill='%2305070A'/%3E%3Cpath d='M256 64L384 192L256 320L128 192Z' fill='%23FBBF24'/%3E%3Cpath d='M256 224L352 320L256 416L160 320Z' fill='%23F59E0B'/%3E%3Ccircle cx='256' cy='256' r='48' fill='%23FEF08A'/%3E%3C/svg%3E",
+      "src": "/abel_icon.svg",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"

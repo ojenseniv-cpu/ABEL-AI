@@ -29,8 +29,12 @@ echo.
 if not exist "%APP_DIR%" mkdir "%APP_DIR%"
 if not exist "%STARTMENU_DIR%" mkdir "%STARTMENU_DIR%"
 
-:: 2. Create Launcher PowerShell Daemon Script
-echo [*] Generating Abel AI background daemon...
+:: 2. Download and set Abel AI Desktop Icon
+echo [*] Downloading high-resolution Gold & Black Abel AI Desktop Icon...
+powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; try { Invoke-WebRequest -Uri '%APP_URL%/abel_icon.svg' -OutFile '%APP_DIR%\abel_icon.svg' -UseBasicParsing; Copy-Item '%APP_DIR%\abel_icon.svg' '%APP_DIR%\abel_icon.ico' -Force } catch { Write-Host 'Using default app icon' }"
+
+:: 3. Create Launcher PowerShell Daemon Script
+echo [*] Generating Abel AI background daemon and desktop shortcut with custom icon...
 (
 echo # Abel AI Windows Daemon Script
 echo $appUrl = "%APP_URL%"
@@ -44,6 +48,11 @@ echo.
 echo # Find Chrome or Edge for standalone app mode
 echo $edgePath = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
 echo $chromePath = "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe"
+echo $iconPath = "%APP_DIR%\abel_icon.ico"
+echo.
+echo if ^(Test-Path $iconPath^^) {
+echo     $shortcut.IconLocation = "$iconPath, 0"
+echo }
 echo.
 echo if ^(Test-Path $edgePath^^) {
 echo     $shortcut.TargetPath = $edgePath
@@ -57,10 +66,10 @@ echo } else {
 echo     $shortcut.TargetPath = $appUrl
 echo }
 echo $shortcut.Save^(^^)
-echo Write-Host "[+] Desktop Shortcut Created Successfully!" -ForegroundColor Green
+echo Write-Host "[+] Desktop Shortcut Created with Custom Gold Abel Icon!" -ForegroundColor Green
 ) > "%APP_DIR%\setup_shortcuts.ps1"
 
-:: 3. Execute Shortcut Creation via PowerShell
+:: 4. Execute Shortcut Creation via PowerShell
 powershell.exe -ExecutionPolicy Bypass -NoProfile -File "%APP_DIR%\setup_shortcuts.ps1"
 
 :: 4. Create Standalone Windows Executable Batch Launcher
