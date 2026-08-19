@@ -932,10 +932,14 @@ app.get('/api/tools/windows-installer-script', (req: Request, res: Response) => 
 
 // 8.1 Generate Windows Double-Click Batch Installer (.bat)
 app.get('/api/tools/windows-batch-installer', (req: Request, res: Response) => {
+  const host = req.get('host') || 'localhost:3000';
+  const proto = req.protocol === 'https' ? 'https' : 'http';
+  const fullAppUrl = `${proto}://${host}`;
+
   const batLines = [
     '@echo off',
     'title Abel AI - Windows Autonomous Executive Installer',
-    'color 06',
+    'color 0E',
     'cls',
     'echo =========================================================================',
     'echo    ABEL AI - AUTONOMOUS EXECUTIVE OS WINDOWS INSTALLER',
@@ -946,23 +950,52 @@ app.get('/api/tools/windows-batch-installer', (req: Request, res: Response) => {
     'if not exist "%LOCALAPPDATA%\\AbelAI" mkdir "%LOCALAPPDATA%\\AbelAI"',
     'echo.',
     'echo [2/3] Writing configuration and registering shortcuts...',
-    'powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut(\'%USERPROFILE%\\Desktop\\Abel AI.lnk\'); $s.TargetPath = \'msedge.exe\'; $s.Arguments = \'--app=http://localhost:3000\'; $s.Description = \'Abel AI Executive OS\'; $s.Save();"',
+    `powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut(\'%USERPROFILE%\\Desktop\\Abel AI.lnk\'); $edgePath = \\"\${env:ProgramFiles(x86)}\\Microsoft\\Edge\\Application\\msedge.exe\\"; $chromePath = \\"\${env:ProgramFiles}\\Google\\Chrome\\Application\\chrome.exe\\"; if (Test-Path $edgePath) { $s.TargetPath = $edgePath; $s.Arguments = \\"--app=${fullAppUrl} --window-size=1440,900\\"; } elseif (Test-Path $chromePath) { $s.TargetPath = $chromePath; $s.Arguments = \\"--app=${fullAppUrl} --window-size=1440,900\\"; } else { $s.TargetPath = \\"${fullAppUrl}\\"; }; $s.Description = \\"Abel AI Executive OS\\"; $s.Save();"`,
     'echo.',
     'echo [3/3] Launching Abel AI in dedicated frameless desktop window...',
-    'start "" msedge.exe --app="http://localhost:3000"',
+    `start "" "${fullAppUrl}"`,
     'echo.',
     'echo =========================================================================',
     'echo  SUCCESS: Abel AI is now installed on your Windows Desktop!',
     'echo  - Desktop Icon created at: %USERPROFILE%\\Desktop\\Abel AI.lnk',
     'echo  - Running in native standalone window mode',
     'echo =========================================================================',
-    'timeout /t 5 >nul',
+    'timeout /t 3 >nul',
     'exit',
   ];
 
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="Install-AbelAI.bat"');
   res.send(batLines.join('\r\n'));
+});
+
+// 8.2 Generate Windows VBScript Silent Launcher Installer
+app.get('/api/tools/windows-vbs-installer', (req: Request, res: Response) => {
+  const host = req.get('host') || 'localhost:3000';
+  const proto = req.protocol === 'https' ? 'https' : 'http';
+  const fullAppUrl = `${proto}://${host}`;
+
+  const vbsCode = [
+    'Set WshShell = CreateObject("WScript.Shell")',
+    'desktopPath = WshShell.SpecialFolders("Desktop")',
+    'Set shortcut = WshShell.CreateShortcut(desktopPath & "\\Abel AI.lnk")',
+    'edgePath = WshShell.ExpandEnvironmentStrings("%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe")',
+    'Set fso = CreateObject("Scripting.FileSystemObject")',
+    'If fso.FileExists(edgePath) Then',
+    `    shortcut.TargetPath = edgePath`,
+    `    shortcut.Arguments = "--app=${fullAppUrl} --window-size=1440,900"`,
+    'Else',
+    `    shortcut.TargetPath = "${fullAppUrl}"`,
+    'End If',
+    'shortcut.Description = "Abel AI - Autonomous Executive OS"',
+    'shortcut.Save',
+    `WshShell.Run "${fullAppUrl}", 1, False`,
+    'MsgBox "Abel AI has been successfully installed to your Windows Desktop!" & vbCrLf & "Desktop Shortcut: Abel AI.lnk", vbInformation, "Abel AI Windows Setup"',
+  ].join('\r\n');
+
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="Install-AbelAI.vbs"');
+  res.send(vbsCode);
 });
 
 // Vite middleware & Production static serving

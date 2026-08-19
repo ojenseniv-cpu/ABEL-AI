@@ -15,6 +15,7 @@ import {
   Check,
   ChevronRight,
   AlertCircle,
+  Mic,
 } from 'lucide-react';
 
 interface WindowsInstallModalProps {
@@ -22,6 +23,7 @@ interface WindowsInstallModalProps {
   onClose: () => void;
   wakeWord?: string;
   triggerHotkey?: string;
+  onOpenAudioCalibration?: () => void;
 }
 
 export const WindowsInstallModal: React.FC<WindowsInstallModalProps> = ({
@@ -29,6 +31,7 @@ export const WindowsInstallModal: React.FC<WindowsInstallModalProps> = ({
   onClose,
   wakeWord = 'hey abel',
   triggerHotkey = 'Space',
+  onOpenAudioCalibration,
 }) => {
   const [activeTab, setActiveTab] = useState<'pwa' | 'ps1' | 'bat' | 'terminal'>('pwa');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -68,12 +71,104 @@ export const WindowsInstallModal: React.FC<WindowsInstallModalProps> = ({
     }
   };
 
+  const batFileContent = `@echo off
+setlocal enabledelayedexpansion
+title Abel AI - Windows Autonomous Executive OS Installer
+color 0E
+
+echo ===============================================================================
+echo                ABEL AI - AUTONOMOUS EXECUTIVE OS & ASSISTANT
+echo                         WINDOWS 10 / 11 INSTALLER
+echo ===============================================================================
+echo.
+echo [*] Initializing Abel AI installer...
+echo [*] Setting up local daemon & desktop integration...
+echo.
+
+set "APP_DIR=%LOCALAPPDATA%\\AbelAI"
+set "DESKTOP_DIR=%USERPROFILE%\\Desktop"
+set "STARTMENU_DIR=%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Abel AI"
+set "APP_URL=${typeof window !== 'undefined' ? window.location.origin : 'https://ais-dev-idpj4eli7xhmtpop4ynom3-561820329646.us-west2.run.app'}"
+
+if not exist "%APP_DIR%" mkdir "%APP_DIR%"
+if not exist "%STARTMENU_DIR%" mkdir "%STARTMENU_DIR%"
+
+(
+echo $wsh = New-Object -ComObject WScript.Shell
+echo $desktopPath = [System.Environment]::GetFolderPath('Desktop'^^^)
+echo $shortcut = $wsh.CreateShortcut^("$desktopPath\\Abel AI.lnk"^^^)
+echo $edgePath = "\${env:ProgramFiles(x86)}\\Microsoft\\Edge\\Application\\msedge.exe"
+echo $chromePath = "\${env:ProgramFiles}\\Google\\Chrome\\Application\\chrome.exe"
+echo if ^(Test-Path $edgePath^^) {
+echo     $shortcut.TargetPath = $edgePath
+echo     $shortcut.Arguments = "--app=%APP_URL% --window-size=1400,900"
+echo } elseif ^(Test-Path $chromePath^^) {
+echo     $shortcut.TargetPath = $chromePath
+echo     $shortcut.Arguments = "--app=%APP_URL% --window-size=1400,900"
+echo } else {
+echo     $shortcut.TargetPath = "%APP_URL%"
+echo }
+echo $shortcut.Save^(^^)
+) > "%APP_DIR%\\setup_shortcuts.ps1"
+
+powershell.exe -ExecutionPolicy Bypass -NoProfile -File "%APP_DIR%\\setup_shortcuts.ps1"
+
+(
+echo @echo off
+echo title Abel AI
+echo start "" "%APP_URL%"
+) > "%APP_DIR%\\Launch-AbelAI.bat"
+
+echo [InternetShortcut] > "%STARTMENU_DIR%\\Abel AI.url"
+echo URL=%APP_URL% >> "%STARTMENU_DIR%\\Abel AI.url"
+
+echo.
+echo [+] Desktop Shortcut Created Successfully!
+echo [+] Local App Folder: %APP_DIR%
+echo.
+start "" "%APP_URL%"
+pause
+`;
+
   const handleDownloadPS1 = () => {
-    window.location.href = '/api/tools/windows-installer-script';
+    try {
+      const blob = new Blob([
+        `# Abel AI Windows Daemon Setup\n$AppUrl = "${window.location.origin}"\n$InstallPath = "$env:LOCALAPPDATA\\AbelAI"\nif (-not (Test-Path $InstallPath)) { New-Item -ItemType Directory -Path $InstallPath -Force }\n$wsh = New-Object -ComObject WScript.Shell\n$shortcut = $wsh.CreateShortcut("$([System.Environment]::GetFolderPath('Desktop'))\\Abel AI.lnk")\n$shortcut.TargetPath = $AppUrl\n$shortcut.Save()\nWrite-Host "[+] Desktop Shortcut Created!" -ForegroundColor Green\nStart-Process $AppUrl\n`
+      ], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'install_abel_ai.ps1';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      window.location.href = '/Install-AbelAI.bat';
+    }
   };
 
   const handleDownloadBAT = () => {
-    window.location.href = '/api/tools/windows-batch-installer';
+    try {
+      const blob = new Blob([batFileContent], { type: 'application/x-bat;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Install-AbelAI.bat';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      window.location.href = '/Install-AbelAI.bat';
+    }
+  };
+
+  const [copiedBat, setCopiedBat] = useState(false);
+  const handleCopyBat = () => {
+    navigator.clipboard.writeText(batFileContent);
+    setCopiedBat(true);
+    setTimeout(() => setCopiedBat(false), 3000);
   };
 
   const terminalOneLiner = `powershell -ExecutionPolicy Bypass -Command "iwr -useb ${window.location.origin}/api/tools/windows-installer-script | iex"`;
@@ -236,20 +331,37 @@ export const WindowsInstallModal: React.FC<WindowsInstallModalProps> = ({
           <div className="space-y-4 text-xs">
             <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 space-y-2">
               <h4 className="text-amber-400 font-bold uppercase text-[11px] flex items-center gap-1.5">
-                <HardDrive className="w-3.5 h-3.5" /> No Terminal Required — Double-Click Setup
+                <HardDrive className="w-3.5 h-3.5" /> No Terminal Required — Double-Click Setup (.bat)
               </h4>
               <p className="text-slate-300 font-sans leading-relaxed">
-                Download the <strong className="text-amber-300">`Install-AbelAI.bat`</strong> file and simply double-click it in your Downloads folder. Windows will automatically register the desktop icon and launch Abel AI in dedicated app mode.
+                The <strong className="text-amber-300">`Install-AbelAI.bat`</strong> file is located in the project root and available for instant download below. Simply double-click it on any Windows 10/11 machine.
               </p>
             </div>
 
-            <button
-              onClick={handleDownloadBAT}
-              className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-2xl text-xs shadow-[0_0_20px_rgba(251,191,36,0.3)] flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Download className="w-4 h-4" />
-              <span>Download `Install-AbelAI.bat` (Double-Click Installer)</span>
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={handleDownloadBAT}
+                className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 font-bold rounded-2xl text-xs shadow-[0_0_20px_rgba(251,191,36,0.3)] flex items-center justify-center gap-2 cursor-pointer transition-transform active:scale-98"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download `Install-AbelAI.bat` (Direct File)</span>
+              </button>
+
+              <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400 text-[10px] uppercase font-bold">Manual Script / File Location:</span>
+                  <button
+                    onClick={handleCopyBat}
+                    className="px-2 py-0.5 bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-amber-300 rounded text-[10px] font-bold transition-colors cursor-pointer"
+                  >
+                    {copiedBat ? '✓ Copied .bat Content' : 'Copy .bat Code'}
+                  </button>
+                </div>
+                <div className="p-2 bg-slate-950 rounded-lg text-slate-400 font-mono text-[10px] select-all overflow-x-auto max-h-24">
+                  <pre>{batFileContent.slice(0, 300)}...</pre>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -276,6 +388,35 @@ export const WindowsInstallModal: React.FC<WindowsInstallModalProps> = ({
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Next Step: Adapt Microphone & Voice Commands */}
+        {onOpenAudioCalibration && (
+          <div className="p-3.5 bg-gradient-to-r from-slate-900 to-amber-950/40 rounded-2xl border border-amber-500/40 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center justify-center font-bold">
+                <Mic className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">Next Step: Adapt Microphone &amp; Voice</div>
+                <div className="text-[10px] text-slate-400 font-sans">
+                  Calibrate your Windows microphone, train wake-word &amp; filter noise.
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenAudioCalibration();
+              }}
+              className="py-1.5 px-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-[11px] uppercase tracking-wider flex items-center gap-1 cursor-pointer shrink-0 transition-transform active:scale-95"
+            >
+              <span>Adapt Mic</span>
+              <ChevronRight className="w-3 h-3" />
+            </button>
           </div>
         )}
 

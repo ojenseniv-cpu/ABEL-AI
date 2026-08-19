@@ -27,6 +27,7 @@ interface WindowsTitlebarAndTrayProps {
   onOpenSettings: () => void;
   activePersona: VoicePersona;
   onOpenInstallModal?: () => void;
+  onOpenAudioCalibration?: () => void;
 }
 
 export const WindowsTitlebarAndTray: React.FC<WindowsTitlebarAndTrayProps> = ({
@@ -37,6 +38,7 @@ export const WindowsTitlebarAndTray: React.FC<WindowsTitlebarAndTrayProps> = ({
   onOpenSettings,
   activePersona,
   onOpenInstallModal,
+  onOpenAudioCalibration,
 }) => {
   const [showToast, setShowToast] = useState(false);
   const [showTrayMenu, setShowTrayMenu] = useState(false);
@@ -104,6 +106,15 @@ export const WindowsTitlebarAndTray: React.FC<WindowsTitlebarAndTrayProps> = ({
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-slate-300">Daemon Active</span>
           </span>
+          {onOpenAudioCalibration && (
+            <button
+              onClick={onOpenAudioCalibration}
+              className="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 text-amber-300 rounded border border-amber-500/40 text-[9px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+              title="Calibrate Windows Microphone and Train Voice Wake-Word"
+            >
+              <Mic className="w-2.5 h-2.5 text-amber-400" /> Adapt Mic &amp; Voice
+            </button>
+          )}
           {onOpenInstallModal && (
             <button
               onClick={onOpenInstallModal}
@@ -284,6 +295,20 @@ export const WindowsTitlebarAndTray: React.FC<WindowsTitlebarAndTrayProps> = ({
               <Settings className="w-3.5 h-3.5" />
               Settings &amp; Hotkeys
             </button>
+
+            {onOpenAudioCalibration && (
+              <button
+                onClick={() => {
+                  onOpenAudioCalibration();
+                  onToggleMinimizeToTray(false);
+                  setShowTrayMenu(false);
+                }}
+                className="w-full text-left px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 transition-colors cursor-pointer flex items-center gap-2"
+              >
+                <Mic className="w-3.5 h-3.5 text-amber-400" />
+                Adapt Mic &amp; Voice
+              </button>
+            )}
 
             <button
               onClick={() => {

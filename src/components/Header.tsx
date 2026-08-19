@@ -20,6 +20,7 @@ import {
   Video,
   Monitor,
   Download,
+  Mic,
 } from 'lucide-react';
 import { NavSection, VoicePersona, UserProfile } from '../types';
 
@@ -36,6 +37,7 @@ interface HeaderProps {
   onOpenUserModal?: () => void;
   visibleModules?: Partial<Record<NavSection, boolean>>;
   onOpenInstallModal?: () => void;
+  onOpenAudioCalibration?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -51,6 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenUserModal,
   visibleModules,
   onOpenInstallModal,
+  onOpenAudioCalibration,
 }) => {
   const allNavItems: {
     id: NavSection;
@@ -191,6 +194,17 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* User Account / Device Switcher & Windows Install Action */}
         <div className="flex items-center gap-2 text-[11px]">
+          {onOpenAudioCalibration && (
+            <button
+              onClick={onOpenAudioCalibration}
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 border border-amber-500/50 rounded-xl text-amber-300 hover:text-white transition-all cursor-pointer shadow-[0_0_10px_rgba(251,191,36,0.15)]"
+              title="Calibrate Windows Microphone & Train Voice Wake-Word"
+            >
+              <Mic className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+              <span className="font-bold">Adapt Mic &amp; Voice</span>
+            </button>
+          )}
+
           {activeUser && (
             <button
               onClick={onOpenUserModal}

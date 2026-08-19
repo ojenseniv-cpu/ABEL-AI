@@ -69,6 +69,64 @@ export const PortfolioWatchtower: React.FC<PortfolioWatchtowerProps> = ({
   const [newHighAction, setNewHighAction] = useState<ThresholdTriggerAction>('send_sms_to_owner');
   const [newLowAction, setNewLowAction] = useState<ThresholdTriggerAction>('send_sms_to_owner');
 
+  // Web3 / MetaMask Wallet Integration State
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [connectedWallet, setConnectedWallet] = useState<string | null>(() => {
+    return localStorage.getItem('abel_ai_connected_wallet');
+  });
+  const [isConnectingWallet, setIsConnectingWallet] = useState(false);
+  const [walletStatusMsg, setWalletStatusMsg] = useState<string | null>(null);
+  const [manualWalletAddress, setManualWalletAddress] = useState('');
+
+  // Safe MetaMask Connection with Graceful Fallback
+  const handleConnectMetaMask = async () => {
+    setIsConnectingWallet(true);
+    setWalletStatusMsg(null);
+
+    try {
+      if (typeof window !== 'undefined' && (window as any).ethereum) {
+        const eth = (window as any).ethereum;
+        const accounts = await eth.request({ method: 'eth_requestAccounts' });
+        if (accounts && accounts.length > 0) {
+          const addr = accounts[0];
+          setConnectedWallet(addr);
+          localStorage.setItem('abel_ai_connected_wallet', addr);
+          setWalletStatusMsg(`Connected successfully: ${addr.slice(0, 6)}...${addr.slice(-4)}`);
+        } else {
+          setWalletStatusMsg('No accounts returned by MetaMask. You can track any public address manually.');
+        }
+      } else {
+        setWalletStatusMsg(
+          'MetaMask extension is not detected in this browser context (e.g. iframe preview or unsupported browser). You can enter any Ethereum or Solana address manually below to track balances.'
+        );
+      }
+    } catch (err: any) {
+      if (err?.code === 4001) {
+        setWalletStatusMsg('Connection request was cancelled in MetaMask.');
+      } else {
+        setWalletStatusMsg('Unable to connect to MetaMask. You can enter your public wallet address manually.');
+      }
+    } finally {
+      setIsConnectingWallet(false);
+    }
+  };
+
+  const handleManualWalletSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualWalletAddress.trim()) return;
+    const addr = manualWalletAddress.trim();
+    setConnectedWallet(addr);
+    localStorage.setItem('abel_ai_connected_wallet', addr);
+    setWalletStatusMsg(`Watching wallet address: ${addr.slice(0, 6)}...${addr.slice(-4)}`);
+    setManualWalletAddress('');
+  };
+
+  const handleDisconnectWallet = () => {
+    setConnectedWallet(null);
+    localStorage.removeItem('abel_ai_connected_wallet');
+    setWalletStatusMsg('Wallet disconnected.');
+  };
+
   // Calculations
   const totalStocksValue = stocks.reduce((acc, s) => acc + (s.shares || 0) * (s.currentPrice || 0), 0);
   const totalStocksCost = stocks.reduce((acc, s) => acc + (s.shares || 0) * (s.avgBuyPrice || 0), 0);
@@ -371,6 +429,22 @@ export const PortfolioWatchtower: React.FC<PortfolioWatchtowerProps> = ({
           >
             <RefreshIcon className={`w-3.5 h-3.5 ${isAuditing ? 'animate-spin' : ''}`} />
             <span>{isAuditing ? 'Auditing...' : 'AI Risk Audit'}</span>
+          </button>
+
+          <button
+            onClick={() => setShowWalletModal(true)}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              connectedWallet
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                : 'bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/40'
+            }`}
+          >
+            <Shield className="w-3.5 h-3.5" />
+            <span>
+              {connectedWallet
+                ? `Wallet: ${connectedWallet.slice(0, 5)}...${connectedWallet.slice(-4)}`
+                : 'Connect Wallet / Web3'}
+            </span>
           </button>
 
           <button
@@ -1270,6 +1344,136 @@ export const PortfolioWatchtower: React.FC<PortfolioWatchtowerProps> = ({
               >
                 Confirm &amp; Add
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Web3 & MetaMask Wallet Integration Modal */}
+      {showWalletModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-950 border-2 border-amber-400 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center justify-center font-bold">
+                  <Shield className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                    Web3 &amp; Crypto Wallet Watchtower
+                  </h3>
+                  <p className="text-[10px] text-slate-400">
+                    Connect MetaMask, Rabby, or track any public EVM/Solana address.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowWalletModal(false)}
+                className="w-7 h-7 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Active Status */}
+            {connectedWallet ? (
+              <div className="p-4 bg-emerald-950/30 border border-emerald-500/40 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase text-emerald-400 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Active Wallet Connected
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleDisconnectWallet}
+                    className="text-[10px] text-rose-400 hover:underline cursor-pointer"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+                <div className="p-2.5 bg-slate-950 rounded-xl font-mono text-xs text-amber-300 select-all break-all border border-slate-800">
+                  {connectedWallet}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* 1-Click MetaMask Connect */}
+                <button
+                  type="button"
+                  onClick={handleConnectMetaMask}
+                  disabled={isConnectingWallet}
+                  className="w-full p-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 font-bold rounded-2xl text-xs flex items-center justify-between shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base">🦊</span>
+                    <div className="text-left">
+                      <div className="font-bold">Connect Browser MetaMask</div>
+                      <div className="text-[10px] opacity-80">Auto-detect Ethereum &amp; Web3 providers</div>
+                    </div>
+                  </div>
+                  <span className="text-[11px] uppercase tracking-wider font-bold">
+                    {isConnectingWallet ? 'Connecting...' : 'Connect →'}
+                  </span>
+                </button>
+
+                {/* Status or Fallback Message */}
+                {walletStatusMsg && (
+                  <div className="p-3 bg-slate-900 border border-amber-500/30 rounded-xl text-xs text-slate-300">
+                    <div className="text-amber-300 font-bold text-[11px] mb-1 flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Notice:
+                    </div>
+                    {walletStatusMsg}
+                  </div>
+                )}
+
+                {/* Manual Address Tracking Option */}
+                <div className="pt-2 border-t border-slate-800 space-y-2">
+                  <label className="text-[10px] text-slate-400 uppercase font-bold block">
+                    Or Track Any Public Wallet Address (Ethereum / Solana / Polygon):
+                  </label>
+                  <form onSubmit={handleManualWalletSave} className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="0x... or Solana public key"
+                      value={manualWalletAddress}
+                      onChange={(e) => setManualWalletAddress(e.target.value)}
+                      className="flex-1 bg-slate-900 border border-slate-800 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white font-mono"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!manualWalletAddress.trim()}
+                      className="px-4 py-2 bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs cursor-pointer"
+                    >
+                      Track
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Demo Wallet Addresses */}
+            <div className="pt-2 border-t border-slate-800 space-y-2 text-[11px]">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Quick Test / Demo Addresses:</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {[
+                  { label: 'Ethereum Whale Vault', addr: '0x28C6c06298d514Db089934071355E5743bf21d60' },
+                  { label: 'Solana Treasury Cold Wallet', addr: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM' },
+                ].map((demo, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setConnectedWallet(demo.addr);
+                      localStorage.setItem('abel_ai_connected_wallet', demo.addr);
+                      setWalletStatusMsg(`Now monitoring ${demo.label}`);
+                    }}
+                    className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-left text-[10px] text-slate-300 hover:text-amber-300 transition-colors cursor-pointer"
+                  >
+                    <div className="font-bold text-white">{demo.label}</div>
+                    <div className="font-mono text-slate-500 truncate">{demo.addr}</div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>

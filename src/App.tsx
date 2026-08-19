@@ -43,11 +43,13 @@ import { VoiceCommandHUD } from './components/VoiceCommandHUD';
 import { OnboardingModal } from './components/OnboardingModal';
 import { WindowsTitlebarAndTray } from './components/WindowsTitlebarAndTray';
 import { WindowsInstallModal } from './components/WindowsInstallModal';
+import { MicrophoneVoiceAdaptationStudio } from './components/MicrophoneVoiceAdaptationStudio';
 
 export default function App() {
   const [currentSection, setCurrentSection] = useState<NavSection>('core');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
+  const [showAudioCalibrationModal, setShowAudioCalibrationModal] = useState(false);
   const [isVoiceHUDOpen, setIsVoiceHUDOpen] = useState(false);
   const [isMinimizedToTray, setIsMinimizedToTray] = useState(false);
 
@@ -433,6 +435,7 @@ export default function App() {
         }}
         activePersona={profile.voiceConfig?.activePersona || 'witty_female'}
         onOpenInstallModal={() => setShowInstallModal(true)}
+        onOpenAudioCalibration={() => setShowAudioCalibrationModal(true)}
       />
 
       {/* Top Header & Navigation */}
@@ -449,6 +452,7 @@ export default function App() {
         onOpenUserModal={() => setShowOnboarding(true)}
         visibleModules={profile.visibleModules}
         onOpenInstallModal={() => setShowInstallModal(true)}
+        onOpenAudioCalibration={() => setShowAudioCalibrationModal(true)}
       />
 
       {/* Main Content Area */}
@@ -587,6 +591,8 @@ export default function App() {
             onUpdateKnowledge={setKnowledgeBase}
             onExportData={handleExportData}
             onResetData={handleResetData}
+            onOpenAudioCalibration={() => setShowAudioCalibrationModal(true)}
+            onOpenInstallModal={() => setShowInstallModal(true)}
           />
         )}
       </main>
@@ -620,6 +626,27 @@ export default function App() {
         onClose={() => setShowInstallModal(false)}
         wakeWord={profile.voiceConfig?.wakeWord}
         triggerHotkey={profile.voiceConfig?.triggerKeyDisplay}
+        onOpenAudioCalibration={() => setShowAudioCalibrationModal(true)}
+      />
+
+      {/* Windows Microphone & Voice Adaptation Studio */}
+      <MicrophoneVoiceAdaptationStudio
+        isOpen={showAudioCalibrationModal}
+        onClose={() => setShowAudioCalibrationModal(false)}
+        currentWakeWord={profile.voiceConfig?.wakeWord || 'hey abel'}
+        onUpdateWakeWord={(newWake) => {
+          handleUpdateVoiceConfig({
+            ...profile.voiceConfig,
+            wakeWord: newWake,
+          } as VoiceConfig);
+        }}
+        triggerHotkey={profile.voiceConfig?.triggerKeyDisplay || 'Space'}
+        onUpdateTriggerHotkey={(newKey) => {
+          handleUpdateVoiceConfig({
+            ...profile.voiceConfig,
+            triggerKeyDisplay: newKey,
+          } as VoiceConfig);
+        }}
       />
 
       {/* Luxury Black & Gold Telemetry Footer */}

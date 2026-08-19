@@ -66,6 +66,8 @@ interface PersonalizationCenterProps {
   onUpdateKnowledge: (kb: ShopKnowledgeBase) => void;
   onExportData: () => void;
   onResetData: () => void;
+  onOpenAudioCalibration?: () => void;
+  onOpenInstallModal?: () => void;
 }
 
 type SettingsTab =
@@ -88,6 +90,8 @@ export const PersonalizationCenter: React.FC<PersonalizationCenterProps> = ({
   onUpdateKnowledge,
   onExportData,
   onResetData,
+  onOpenAudioCalibration,
+  onOpenInstallModal,
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('theme_editor');
   const [formProfile, setFormProfile] = useState<PersonalProfile>(profile);
@@ -1169,14 +1173,26 @@ export const PersonalizationCenter: React.FC<PersonalizationCenterProps> = ({
       {/* TAB 5: VOICE PERSONA & HOTKEY */}
       {activeTab === 'voice_hotkey' && (
         <div className="bg-slate-950 border-2 border-amber-500/40 rounded-3xl p-6 space-y-6 shadow-md">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
               <Mic className="w-4 h-4" />
               Voice Operating System Persona &amp; Custom Hotkey
             </h3>
-            <span className="text-[10px] px-2 py-0.5 bg-amber-400/10 text-amber-300 border border-amber-400/30 rounded-lg">
-              REAL-TIME VOICE SYNTHESIS
-            </span>
+            <div className="flex items-center gap-2">
+              {onOpenAudioCalibration && (
+                <button
+                  type="button"
+                  onClick={onOpenAudioCalibration}
+                  className="px-3 py-1.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-transform active:scale-95"
+                >
+                  <Mic className="w-3.5 h-3.5" />
+                  <span>Adapt Mic &amp; Voice Studio</span>
+                </button>
+              )}
+              <span className="text-[10px] px-2 py-0.5 bg-amber-400/10 text-amber-300 border border-amber-400/30 rounded-lg">
+                REAL-TIME SYNTHESIS
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
@@ -1473,7 +1489,20 @@ export const PersonalizationCenter: React.FC<PersonalizationCenterProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    window.location.href = '/api/tools/windows-batch-installer';
+                    try {
+                      const batContent = `@echo off\r\ntitle Abel AI Installer\r\nset "APP_DIR=%LOCALAPPDATA%\\AbelAI"\r\nif not exist "%APP_DIR%" mkdir "%APP_DIR%"\r\necho [+] Abel AI Installed!\r\nstart "" "${window.location.origin}"\r\npause\r\n`;
+                      const blob = new Blob([batContent], { type: 'application/x-bat;charset=utf-8' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'Install-AbelAI.bat';
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                    } catch (e) {
+                      window.location.href = '/Install-AbelAI.bat';
+                    }
                   }}
                   className="py-3 bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-amber-300 hover:text-white font-bold rounded-2xl text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
