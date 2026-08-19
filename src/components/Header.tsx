@@ -18,6 +18,8 @@ import {
   User,
   Users,
   Video,
+  Monitor,
+  Download,
 } from 'lucide-react';
 import { NavSection, VoicePersona, UserProfile } from '../types';
 
@@ -33,6 +35,7 @@ interface HeaderProps {
   activeUser?: UserProfile;
   onOpenUserModal?: () => void;
   visibleModules?: Partial<Record<NavSection, boolean>>;
+  onOpenInstallModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -47,6 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeUser,
   onOpenUserModal,
   visibleModules,
+  onOpenInstallModal,
 }) => {
   const allNavItems: {
     id: NavSection;
@@ -185,8 +189,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* User Account / Device Switcher */}
-        <div className="flex items-center gap-3 text-[11px]">
+        {/* User Account / Device Switcher & Windows Install Action */}
+        <div className="flex items-center gap-2 text-[11px]">
           {activeUser && (
             <button
               onClick={onOpenUserModal}
@@ -200,9 +204,14 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          <span className="text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30 text-[10px]">
-            WINDOWS EXE • PS1 READY
-          </span>
+          <button
+            onClick={onOpenInstallModal}
+            className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold rounded-xl text-[10px] shadow-[0_0_15px_rgba(251,191,36,0.4)] cursor-pointer transition-transform active:scale-95"
+            title="Install Abel AI on Windows Desktop"
+          >
+            <Monitor className="w-3.5 h-3.5 text-slate-950" />
+            <span>Install on Windows</span>
+          </button>
         </div>
       </div>
 

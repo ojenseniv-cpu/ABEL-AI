@@ -1458,24 +1458,40 @@ export const PersonalizationCenter: React.FC<PersonalizationCenterProps> = ({
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-800 space-y-3">
-              <button
-                onClick={handleDownloadWindowsInstaller}
-                disabled={downloadingInstaller}
-                className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 font-bold rounded-2xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all cursor-pointer"
-              >
-                <FolderDown className="w-4 h-4" />
-                {downloadingInstaller ? 'Generating Installer...' : 'Download install_abel_ai.ps1'}
-              </button>
+            <div className="pt-4 border-t border-slate-800 space-y-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadWindowsInstaller}
+                  disabled={downloadingInstaller}
+                  className="py-3 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 font-bold rounded-2xl text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all cursor-pointer"
+                >
+                  <FolderDown className="w-3.5 h-3.5" />
+                  {downloadingInstaller ? 'Generating...' : 'PS1 Installer (.ps1)'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = '/api/tools/windows-batch-installer';
+                  }}
+                  className="py-3 bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-amber-300 hover:text-white font-bold rounded-2xl text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Double-Click (.bat)
+                </button>
+              </div>
 
               <div className="flex gap-2">
                 <button
+                  type="button"
                   onClick={onExportData}
                   className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5"
                 >
                   <Download className="w-3.5 h-3.5" /> Export Backup
                 </button>
                 <button
+                  type="button"
                   onClick={onResetData}
                   className="py-2 px-3 bg-slate-900 hover:bg-rose-950/40 border border-slate-800 text-rose-400 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5"
                 >

@@ -42,10 +42,12 @@ import { TikTokStudio } from './components/TikTokStudio';
 import { VoiceCommandHUD } from './components/VoiceCommandHUD';
 import { OnboardingModal } from './components/OnboardingModal';
 import { WindowsTitlebarAndTray } from './components/WindowsTitlebarAndTray';
+import { WindowsInstallModal } from './components/WindowsInstallModal';
 
 export default function App() {
   const [currentSection, setCurrentSection] = useState<NavSection>('core');
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
   const [isVoiceHUDOpen, setIsVoiceHUDOpen] = useState(false);
   const [isMinimizedToTray, setIsMinimizedToTray] = useState(false);
 
@@ -430,6 +432,7 @@ export default function App() {
           setIsMinimizedToTray(false);
         }}
         activePersona={profile.voiceConfig?.activePersona || 'witty_female'}
+        onOpenInstallModal={() => setShowInstallModal(true)}
       />
 
       {/* Top Header & Navigation */}
@@ -445,6 +448,7 @@ export default function App() {
         activeUser={profile.activeUser}
         onOpenUserModal={() => setShowOnboarding(true)}
         visibleModules={profile.visibleModules}
+        onOpenInstallModal={() => setShowInstallModal(true)}
       />
 
       {/* Main Content Area */}
@@ -608,6 +612,14 @@ export default function App() {
         onComplete={handleOnboardingComplete}
         existingUsers={profile.allUsers || defaultUsersList}
         onSwitchUser={handleSwitchUser}
+      />
+
+      {/* Dedicated Windows Desktop & Daemon Installer Modal */}
+      <WindowsInstallModal
+        isOpen={showInstallModal}
+        onClose={() => setShowInstallModal(false)}
+        wakeWord={profile.voiceConfig?.wakeWord}
+        triggerHotkey={profile.voiceConfig?.triggerKeyDisplay}
       />
 
       {/* Luxury Black & Gold Telemetry Footer */}

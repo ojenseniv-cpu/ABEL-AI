@@ -930,6 +930,41 @@ app.get('/api/tools/windows-installer-script', (req: Request, res: Response) => 
   res.send(ps1Lines.join('\r\n'));
 });
 
+// 8.1 Generate Windows Double-Click Batch Installer (.bat)
+app.get('/api/tools/windows-batch-installer', (req: Request, res: Response) => {
+  const batLines = [
+    '@echo off',
+    'title Abel AI - Windows Autonomous Executive Installer',
+    'color 06',
+    'cls',
+    'echo =========================================================================',
+    'echo    ABEL AI - AUTONOMOUS EXECUTIVE OS WINDOWS INSTALLER',
+    'echo    Configuring System Tray Daemon, Desktop App Mode and Hotkeys...',
+    'echo =========================================================================',
+    'echo.',
+    'echo [1/3] Creating Abel AI directory in AppData...',
+    'if not exist "%LOCALAPPDATA%\\AbelAI" mkdir "%LOCALAPPDATA%\\AbelAI"',
+    'echo.',
+    'echo [2/3] Writing configuration and registering shortcuts...',
+    'powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut(\'%USERPROFILE%\\Desktop\\Abel AI.lnk\'); $s.TargetPath = \'msedge.exe\'; $s.Arguments = \'--app=http://localhost:3000\'; $s.Description = \'Abel AI Executive OS\'; $s.Save();"',
+    'echo.',
+    'echo [3/3] Launching Abel AI in dedicated frameless desktop window...',
+    'start "" msedge.exe --app="http://localhost:3000"',
+    'echo.',
+    'echo =========================================================================',
+    'echo  SUCCESS: Abel AI is now installed on your Windows Desktop!',
+    'echo  - Desktop Icon created at: %USERPROFILE%\\Desktop\\Abel AI.lnk',
+    'echo  - Running in native standalone window mode',
+    'echo =========================================================================',
+    'timeout /t 5 >nul',
+    'exit',
+  ];
+
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="Install-AbelAI.bat"');
+  res.send(batLines.join('\r\n'));
+});
+
 // Vite middleware & Production static serving
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {

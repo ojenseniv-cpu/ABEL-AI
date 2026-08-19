@@ -14,6 +14,8 @@ import {
   RotateCcw,
   ShieldCheck,
   Zap,
+  Monitor,
+  Download,
 } from 'lucide-react';
 import { VoiceConfig, VoicePersona } from '../types';
 
@@ -24,6 +26,7 @@ interface WindowsTitlebarAndTrayProps {
   onOpenVoiceHUD: () => void;
   onOpenSettings: () => void;
   activePersona: VoicePersona;
+  onOpenInstallModal?: () => void;
 }
 
 export const WindowsTitlebarAndTray: React.FC<WindowsTitlebarAndTrayProps> = ({
@@ -33,6 +36,7 @@ export const WindowsTitlebarAndTray: React.FC<WindowsTitlebarAndTrayProps> = ({
   onOpenVoiceHUD,
   onOpenSettings,
   activePersona,
+  onOpenInstallModal,
 }) => {
   const [showToast, setShowToast] = useState(false);
   const [showTrayMenu, setShowTrayMenu] = useState(false);
@@ -94,10 +98,20 @@ export const WindowsTitlebarAndTray: React.FC<WindowsTitlebarAndTrayProps> = ({
           </span>
         </div>
 
-        {/* Center: System Status Badge */}
-        <div className="hidden md:flex items-center gap-2 text-[10px]">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-slate-300">Background Daemon Active (Tray Enabled)</span>
+        {/* Center: System Status Badge & Windows Install Trigger */}
+        <div className="hidden md:flex items-center gap-3 text-[10px]">
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-slate-300">Daemon Active</span>
+          </span>
+          {onOpenInstallModal && (
+            <button
+              onClick={onOpenInstallModal}
+              className="px-2 py-0.5 bg-amber-400/20 hover:bg-amber-400 text-amber-300 hover:text-slate-950 rounded border border-amber-400/40 text-[9px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+            >
+              <Download className="w-2.5 h-2.5" /> Install App
+            </button>
+          )}
         </div>
 
         {/* Right: Windows Minimize, Maximize, Close Buttons */}
