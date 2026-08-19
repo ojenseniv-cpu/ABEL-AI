@@ -132,47 +132,43 @@ pause
 `;
 
   const handleDownloadPS1 = () => {
-    try {
-      const blob = new Blob([
-        `# Abel AI Windows Daemon Setup\n$AppUrl = "${window.location.origin}"\n$InstallPath = "$env:LOCALAPPDATA\\AbelAI"\nif (-not (Test-Path $InstallPath)) { New-Item -ItemType Directory -Path $InstallPath -Force }\n$wsh = New-Object -ComObject WScript.Shell\n$shortcut = $wsh.CreateShortcut("$([System.Environment]::GetFolderPath('Desktop'))\\Abel AI.lnk")\n$shortcut.TargetPath = $AppUrl\n$shortcut.Save()\nWrite-Host "[+] Desktop Shortcut Created!" -ForegroundColor Green\nStart-Process $AppUrl\n`
-      ], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'install_abel_ai.ps1';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      window.location.href = '/Install-AbelAI.bat';
-    }
+    window.location.href = '/api/tools/windows-installer-script';
   };
 
   const handleDownloadBAT = () => {
+    window.location.href = '/api/tools/windows-batch-installer';
+  };
+
+  const handleDownloadURL = () => {
     try {
-      const blob = new Blob([batFileContent], { type: 'application/x-bat;charset=utf-8' });
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://ais-dev-idpj4eli7xhmtpop4ynom3-561820329646.us-west2.run.app';
+      const urlContent = `[InternetShortcut]\r\nURL=${origin}\r\nIconFile=%LOCALAPPDATA%\\AbelAI\\abel_icon.ico\r\nIconIndex=0\r\n`;
+      const blob = new Blob([urlContent], { type: 'application/octet-stream' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'Install-AbelAI.bat';
+      a.download = 'Abel AI.url';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      setInstallStatus('✨ Abel AI.url shortcut downloaded! Drag it directly to your Windows Desktop.');
     } catch (e) {
-      window.location.href = '/Install-AbelAI.bat';
+      window.open(window.location.origin, '_blank');
     }
   };
 
   const [copiedBat, setCopiedBat] = useState(false);
   const handleCopyBat = () => {
-    navigator.clipboard.writeText(batFileContent);
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const cmd = `curl -s "${origin}/api/tools/windows-batch-installer" -o "%USERPROFILE%\\Downloads\\Install-AbelAI.bat" && start "" "%USERPROFILE%\\Downloads\\Install-AbelAI.bat"`;
+    navigator.clipboard.writeText(cmd);
     setCopiedBat(true);
     setTimeout(() => setCopiedBat(false), 3000);
   };
 
-  const terminalOneLiner = `powershell -ExecutionPolicy Bypass -Command "iwr -useb ${window.location.origin}/api/tools/windows-installer-script | iex"`;
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const terminalOneLiner = `powershell -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; & { $(Invoke-WebRequest -Uri '${origin}/api/tools/windows-installer-script' -UseBasicParsing).Content } | Invoke-Expression"`;
 
   const handleCopyTerminal = () => {
     navigator.clipboard.writeText(terminalOneLiner);
@@ -350,26 +346,35 @@ pause
             </div>
 
             <div className="space-y-2">
-              <button
-                onClick={handleDownloadBAT}
-                className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 font-bold rounded-2xl text-xs shadow-[0_0_20px_rgba(251,191,36,0.3)] flex items-center justify-center gap-2 cursor-pointer transition-transform active:scale-98"
-              >
-                <Download className="w-4 h-4" />
-                <span>Download `Install-AbelAI.bat` (Direct File)</span>
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  onClick={handleDownloadBAT}
+                  className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 font-bold rounded-2xl text-xs shadow-[0_0_20px_rgba(251,191,36,0.3)] flex items-center justify-center gap-2 cursor-pointer transition-transform active:scale-98 text-center"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download `Install-AbelAI.bat`</span>
+                </button>
+                <button
+                  onClick={handleDownloadURL}
+                  className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/40 font-bold rounded-2xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-transform active:scale-98 text-center"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download `Abel AI.url` Shortcut</span>
+                </button>
+              </div>
 
               <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400 text-[10px] uppercase font-bold">Manual Script / File Location:</span>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold">Quick Command Run:</span>
                   <button
                     onClick={handleCopyBat}
                     className="px-2 py-0.5 bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-amber-300 rounded text-[10px] font-bold transition-colors cursor-pointer"
                   >
-                    {copiedBat ? '✓ Copied .bat Content' : 'Copy .bat Code'}
+                    {copiedBat ? '✓ Copied Command' : 'Copy 1-Line Run'}
                   </button>
                 </div>
-                <div className="p-2 bg-slate-950 rounded-lg text-slate-400 font-mono text-[10px] select-all overflow-x-auto max-h-24">
-                  <pre>{batFileContent.slice(0, 300)}...</pre>
+                <div className="p-2 bg-slate-950 rounded-lg text-amber-300/80 font-mono text-[10px] select-all overflow-x-auto">
+                  <code>curl -s "{origin}/api/tools/windows-batch-installer" -o "%USERPROFILE%\Downloads\Install-AbelAI.bat" &amp;&amp; start "" "%USERPROFILE%\Downloads\Install-AbelAI.bat"</code>
                 </div>
               </div>
             </div>
